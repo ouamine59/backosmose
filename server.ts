@@ -45,6 +45,9 @@ dbServer.connect((err: object) => {
 const userRoutes= require('./routes/users.ts');
 appServer.use('/api/users', userRoutes);
 
+const oeuvresRoutes= require('./routes/oeuvres.ts');
+appServer.use('/api/oeuvres', oeuvresRoutes);
+
 const port = process.env.PORT || 5050;
 appServer.listen(port, () =>{
     console.log(`SERVER  DEMMARE: ${process.env.PORT}`)
