@@ -8,7 +8,7 @@ import bcrypt from 'bcrypt';
 const  routerUsers =  require( '../../routes/users'); 
 const  db = require( '../../config/db'); 
 
-jest.mock('../../config/db'); // Moquer la base de données
+jest.mock('../../config/db'); // Moquer la base de données.
 
 const app = express();
 app.use(express.json());
