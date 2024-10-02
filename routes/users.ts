@@ -11,6 +11,8 @@ interface User {
     id: number;
     username: string;
     role: string;
+    password?: string; 
+
 }
 
 const login = (sql: string, username: string, password: string, res: Response)=>{
