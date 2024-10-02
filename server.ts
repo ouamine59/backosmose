@@ -1,16 +1,16 @@
-const express   = require('express');
+const expressServer   = require('express');
 const bodyParser= require('body-parser');
 
 const swaggerJsDoc = require('swagger-jsdoc')
 const swaggerUi = require('swagger-ui-express')
 const cors = require('cors'); 
-const app = express();
+const appServer = expressServer();
 
-app.use(cors());
-app.use(cors({
+appServer.use(cors());
+appServer.use(cors({
     origin:'http://localhost:8080'
 }));
-app.use(bodyParser.json())
+appServer.use(bodyParser.json())
 
 const swaggerOptions = {
     swaggerDefinition : {
@@ -30,11 +30,11 @@ const swaggerOptions = {
 
 const swaggerDocs  = swaggerJsDoc(swaggerOptions)
 //initialisation du swagger
-app.use('/api-doc', swaggerUi.serve , swaggerUi.setup(swaggerDocs))
+appServer.use('/api-doc', swaggerUi.serve , swaggerUi.setup(swaggerDocs))
 
 
-const db = require( './config/db.ts' )
-db.connect((err) => {
+const dbServer = require( './config/db.ts' )
+dbServer.connect((err: object) => {
     if (err){
         console.log(err);
     }
@@ -43,10 +43,10 @@ db.connect((err) => {
     }
 })
 const userRoutes= require('./routes/users.ts');
-app.use('/api/users', userRoutes);
+appServer.use('/api/users', userRoutes);
 
 const port = process.env.PORT || 5050;
-app.listen(port, () =>{
+appServer.listen(port, () =>{
     console.log(`SERVER  DEMMARE: ${process.env.PORT}`)
 
 })
