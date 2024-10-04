@@ -1,6 +1,9 @@
 const expressServer   = require('express');
 const bodyParser= require('body-parser');
 
+
+
+
 const swaggerJsDoc = require('swagger-jsdoc')
 const swaggerUi = require('swagger-ui-express')
 const cors = require('cors'); 
@@ -11,7 +14,7 @@ appServer.use(cors({
     origin:'http://localhost:8080'
 }));
 appServer.use(bodyParser.json())
-
+appServer.use(expressServer.urlencoded({ extended: true }));
 const swaggerOptions = {
     swaggerDefinition : {
         openapi: '3.1.0',
@@ -22,7 +25,7 @@ const swaggerOptions = {
             contact : {
                 name :'tino'
             },
-            servers : [{ url: 'http://localhost:3606'}]
+            servers : [{ url: 'http://localhost:8889'}]
         }
     },
     apis : ['./routes/*.js']
