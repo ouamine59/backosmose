@@ -4,7 +4,7 @@ const bcryptUsers = require('bcrypt');
 import {Request, Response } from 'express';
 const jwtUsers = require('jsonwebtoken')
 const dbUsers = require( '../config/db.ts' )
-import authenticateJWT from '../middleware/authenticateJWT';
+
 const { query, validationResult , check, body} = require('express-validator');
 
 const secret = process.env.SECRET_KEY || 'ma-super-clef'

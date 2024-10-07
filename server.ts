@@ -1,6 +1,9 @@
 const expressServer   = require('express');
 const bodyParser= require('body-parser');
 
+
+
+
 const swaggerJsDoc = require('swagger-jsdoc')
 const swaggerUi = require('swagger-ui-express')
 const cors = require('cors'); 
@@ -11,7 +14,7 @@ appServer.use(cors({
     origin:'http://localhost:8080'
 }));
 appServer.use(bodyParser.json())
-
+appServer.use(expressServer.urlencoded({ extended: true }));
 const swaggerOptions = {
     swaggerDefinition : {
         openapi: '3.1.0',
@@ -22,7 +25,7 @@ const swaggerOptions = {
             contact : {
                 name :'tino'
             },
-            servers : [{ url: 'http://localhost:3606'}]
+            servers : [{ url: 'http://localhost:8889'}]
         }
     },
     apis : ['./routes/*.js']
@@ -31,6 +34,7 @@ const swaggerOptions = {
 const swaggerDocs  = swaggerJsDoc(swaggerOptions)
 //initialisation du swagger
 appServer.use('/api-doc', swaggerUi.serve , swaggerUi.setup(swaggerDocs))
+
 
 
 const dbServer = require( './config/db.ts' )
@@ -42,8 +46,13 @@ dbServer.connect((err: object) => {
         console.log('bravo !!');
     }
 })
+
+
 const userRoutes= require('./routes/users.ts');
 appServer.use('/api/users', userRoutes);
+
+const oeuvresRoutes= require('./routes/oeuvres.ts');
+appServer.use('/api/oeuvres', oeuvresRoutes);
 
 const port = process.env.PORT || 5050;
 appServer.listen(port, () =>{
