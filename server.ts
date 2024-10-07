@@ -21,7 +21,7 @@ const swaggerOptions = {
         info : {
             title: 'API QUIZZ',
             version : '0.0.1',
-            description : 'Je suis une super API',
+            description : 'Je suis une super API !',
             contact : {
                 name :'tino'
             },
