@@ -2,7 +2,6 @@ const expressOeuvres = require('express');
 const routerOeuvres = expressOeuvres.Router();
 import {Request, Response } from 'express';
 import authenticateJWT from '../middleware/authenticateJWT';
-
 import { unlink } from 'node:fs';
 const dbOeuvres = require( '../config/db.ts' )
 const { query, validationResult , check, body} = require('express-validator');
@@ -33,9 +32,9 @@ const storage = multer.diskStorage({
         // Vérifier dans la base de données si le nom existe déjà
         let fileExists = await checkIfFileExistsInDB(newFileName);
         while (fileExists) {
-            const newUniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            newFileName = `${originalName}-${newUniqueSuffix}.${typeName}`;
-            fileExists = await checkIfFileExistsInDB(newFileName);
+          const newUniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          newFileName = `${originalName}-${newUniqueSuffix}.${typeName}`;
+          fileExists = await checkIfFileExistsInDB(newFileName);
         }
         if (!customReq.newFileName) {
             customReq.newFileName = [];
@@ -78,12 +77,14 @@ class Oeuvres{
         this.description = description ;
         this.pictures = pictures;
     }
-    
+
+
     create = (sql: string,res: Response)=>{
        dbOeuvres.query(sql, [ this.name, this.isCreatedAt,this.idArtist,this.description], async (err: Error | null, results : InsertResult)=>{
             if(err){
                 return res.status(500).send({message : 'erreur', 'type': err});
             } 
+
             const workId = results.insertId;
             const sqlPicture :string = "INSERT INTO pictures(pictures, idWorks ) VALUES (?,?)"
             for(let i = 0;i <this.pictures.length ;i++){
@@ -193,4 +194,5 @@ routerOeuvres.put('/admin/update',
             res.status(500).send({message : 'erreur', 'type': error});     
         }
     })
+
 module.exports = routerOeuvres ;
