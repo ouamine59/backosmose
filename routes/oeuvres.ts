@@ -138,6 +138,22 @@ class Oeuvres{
             }
         })
      }
+     shutDown = (sql: string,res: Response, id:number)=>{
+        const isInDB:string ="SELECT * FROM works WHERE idWorks =?";
+        dbOeuvres.query(isInDB, [id], async (err: Error | null, results : any)=>{
+           console.log(results)
+             if(results.length >0){ 
+               dbOeuvres.query(sql, [ id], async (err: Error | null, results : InsertResult)=>{
+                    if(err){
+                       return res.status(500).send({message : 'erreur', 'type': err});
+                    }
+                    res.status(201).send({'message':"oeuvres shudown"})   
+               })
+           }else{
+               return res.status(500).send({message : 'pas dans bdd'});
+           }
+       })
+    }
 }
 
 
@@ -194,5 +210,20 @@ routerOeuvres.put('/admin/update',
             res.status(500).send({message : 'erreur', 'type': error});     
         }
     })
-
+routerOeuvres.put('/admin/shutdown',
+    async(req: Request,res: Response)=>{
+        try{
+            const {idWorks} = req.body ;
+            const sql = "UPDATE works SET isAvailable= 0 WHERE idWorks=?";
+            const result = validationResult(req);
+            if (result.isEmpty()) {
+                const oeuvre = new Oeuvres("", "",1,"description", []);
+                oeuvre.shutDown(sql, res, idWorks)
+            }else{
+                res.send({ errors: result.array() });
+            }  
+        }catch(error){
+            res.status(500).send({message : 'erreur', 'type': error});     
+        }
+    })
 module.exports = routerOeuvres ;
