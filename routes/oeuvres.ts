@@ -1,0 +1,130 @@
+const expressOeuvres = require('express');
+const routerOeuvres = expressOeuvres.Router();
+import {Request, Response } from 'express';
+const dbOeuvres = require( '../config/db.ts' )
+const { query, validationResult , check, body} = require('express-validator');
+
+const fs = require("fs");
+const multer  = require('multer');
+interface CustomRequest extends Request {
+    newFileName?: string[]; 
+  }
+
+const storage = multer.diskStorage({
+    destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
+        const path = `./uploads`
+        fs.mkdirSync(path, { recursive: true })  
+        return cb(null, path);
+    },
+    filename: async (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const customReq = req as CustomRequest;
+        const namePicture = file.originalname;
+        const splitNamePicture = namePicture.split('.');
+        const typeName = splitNamePicture.pop(); 
+        const originalName = splitNamePicture.join('.'); // nom sans extension
+    
+        // Créer un nom de fichier unique
+        let newFileName = `${originalName}-${uniqueSuffix}.${typeName}`;
+    
+        // Vérifier dans la base de données si le nom existe déjà
+        let fileExists = await checkIfFileExistsInDB(newFileName);
+        while (fileExists) {
+          const newUniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          newFileName = `${originalName}-${newUniqueSuffix}.${typeName}`;
+          fileExists = await checkIfFileExistsInDB(newFileName);
+        }
+        if (!customReq.newFileName) {
+            customReq.newFileName = [];
+          }
+        customReq.newFileName.push(newFileName);
+        cb(null, newFileName);
+        
+      }
+})
+async function checkIfFileExistsInDB(filename: string): Promise<boolean> {
+    const sql = 'SELECT pictures FROM pictures WHERE pictures = ?';
+    const [results] = await dbOeuvres.promise().query(sql, [filename]);
+    return results.length > 0;
+}
+  const upload = multer({ storage: storage })
+
+
+
+
+interface Oeuvres {
+    id: number;
+    name: string;
+    isCreatedAt : string;
+    idArtist: number;
+    description: string;
+    pictures:string[];
+    req: Request;
+}
+interface InsertResult {
+    insertId: number;
+    affectedRows: number;
+    warningStatus: number;
+  }
+  let pictures:  string[] =[]
+class Oeuvres{
+    constructor( name: string, isCreatedAt: string,idArtist:number,description:string, pictures:string[]){
+        this.name = name;
+        this.isCreatedAt = isCreatedAt;
+        this.idArtist = idArtist
+        this.description = description ;
+        this.pictures = pictures;
+    }
+     create = (sql: string,res: Response)=>{
+        if(this.pictures = []){
+            return res.status(500).send({message : "il n'y a pas d'images",});
+        }
+       dbOeuvres.query(sql, [ this.name, this.isCreatedAt,this.idArtist,this.description], async (err: Error | null, results : InsertResult)=>{
+            if(err){
+                return res.status(500).send({message : 'erreur', 'type': err});
+            }
+            
+            const workId = results.insertId;
+            const sqlPicture :string = "INSERT INTO pictures(pictures, idWorks ) VALUES (?,?)"
+            for(let i = 0;i <this.pictures.length ;i++){
+               dbOeuvres.query(sqlPicture, [this.pictures[i], workId  ], async (err: Error | null, results : InsertResult)=>{
+                    if(err){
+                        return res.status(500).send({'message' : 'erreur', 'type': err});
+                    }
+                    res.status(201).send({'message':"oeuvres inserée."}) 
+                })
+            }
+            
+             
+           // res.status(201).send({'message':"oeuvres crée."})      
+        })
+    }
+}
+
+
+routerOeuvres.post('/admin/create',
+    upload.fields([{ name: 'image', maxCount: 8 }
+      ]),
+    body('name').trim().notEmpty().escape(), 
+    body('isCreatedAt').isDate({format: 'YYYY-MM-DD'}).escape(),
+    body('idArtist').isInt().escape(),
+    body('description').trim().notEmpty().escape(),
+    
+    async(req: Request,res: Response)=>{
+    const customReq = req as CustomRequest;
+    const {name, isCreatedAt,idArtist,description} = req.body ;
+    const sql = "INSERT INTO works(name, isCreatedAt,idArtist,description) VALUES (?,?,?,?)";
+    const result = validationResult(req);
+    if (result.isEmpty()) {
+        let a: string[] = [] ; 
+        if(customReq.newFileName){
+            a = customReq.newFileName
+        }
+        const oeuvre = new Oeuvres(name, isCreatedAt,idArtist,description, a);
+        oeuvre.create(sql, res )
+    }else{
+        res.send({ errors: result.array() });
+    }  
+})
+
+module.exports = routerOeuvres ;
