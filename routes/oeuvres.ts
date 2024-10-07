@@ -1,6 +1,8 @@
 const expressOeuvres = require('express');
 const routerOeuvres = expressOeuvres.Router();
 import {Request, Response } from 'express';
+import authenticateJWT from '../middleware/authenticateJWT';
+import { unlink } from 'node:fs';
 const dbOeuvres = require( '../config/db.ts' )
 const { query, validationResult , check, body} = require('express-validator');
 
@@ -75,15 +77,14 @@ class Oeuvres{
         this.description = description ;
         this.pictures = pictures;
     }
-     create = (sql: string,res: Response)=>{
-        if(this.pictures = []){
-            return res.status(500).send({message : "il n'y a pas d'images",});
-        }
+
+
+    create = (sql: string,res: Response)=>{
        dbOeuvres.query(sql, [ this.name, this.isCreatedAt,this.idArtist,this.description], async (err: Error | null, results : InsertResult)=>{
             if(err){
                 return res.status(500).send({message : 'erreur', 'type': err});
-            }
-            
+            } 
+
             const workId = results.insertId;
             const sqlPicture :string = "INSERT INTO pictures(pictures, idWorks ) VALUES (?,?)"
             for(let i = 0;i <this.pictures.length ;i++){
@@ -93,18 +94,56 @@ class Oeuvres{
                     }
                     res.status(201).send({'message':"oeuvres inserée."}) 
                 })
-            }
-            
-             
-           // res.status(201).send({'message':"oeuvres crée."})      
+            } 
         })
     }
+
+     update = (sql: string,res: Response, id:number)=>{
+         const isInDB:string ="SELECT * FROM works WHERE idWorks =?";
+         dbOeuvres.query(isInDB, [  id], async (err: Error | null, results : any)=>{
+            console.log(results)
+              if(results.length >0){
+                res.status(201).send({'message':"oeuvres modifié."}) 
+                dbOeuvres.query(sql, [ this.name, this.isCreatedAt,this.idArtist,this.description, id], async (err: Error | null, results : InsertResult)=>{
+                    if(err){
+                        return res.status(500).send({message : 'erreur', 'type': err});
+                    }
+                    const select :string = "SELECT * FROM pictures WHERE idWorks= ?"
+                    dbOeuvres.query(select, [ id], async (err: Error | null, results : any)=>{
+                        if(results){
+                            for(let i =0;i<results.length; i++)
+                                unlink("uploads/"+results[i].pictures, (err) => {
+                                    if (err) throw err;
+                            });
+                        }
+                    })
+                    const sqlDeletePath : string = "DELETE FROM pictures WHERE idWorks=?"
+                    dbOeuvres.query(sqlDeletePath, [ id  ], async (err: Error | null, results : InsertResult)=>{
+                        if(err){
+                            return res.status(500).send({'message' : 'erreur', 'type': err});
+                        }
+                    })
+                    const sqlPicture :string = "INSERT INTO pictures(pictures, idWorks) VALUES(?,?)"
+                    for(let i = 0;i <this.pictures.length ;i++){
+                        dbOeuvres.query(sqlPicture, [this.pictures[i], id  ], async (err: Error | null, results : InsertResult)=>{
+                            if(err){
+                                return res.status(500).send({'message' : 'erreur', 'type': err});
+                            }
+                            res.status(201).send({'message':"oeuvres modifié."}) 
+                        })
+                    } 
+                })
+            }else{
+                return res.status(500).send({message : 'pas dans bdd'});
+            }
+        })
+     }
 }
 
 
 routerOeuvres.post('/admin/create',
-    upload.fields([{ name: 'image', maxCount: 8 }
-      ]),
+    authenticateJWT,
+    upload.fields([{ name: 'image', maxCount: 8 }]),
     body('name').trim().notEmpty().escape(), 
     body('isCreatedAt').isDate({format: 'YYYY-MM-DD'}).escape(),
     body('idArtist').isInt().escape(),
@@ -126,5 +165,34 @@ routerOeuvres.post('/admin/create',
         res.send({ errors: result.array() });
     }  
 })
+routerOeuvres.put('/admin/update',
+    authenticateJWT,
+    upload.fields([{ name: 'image', maxCount: 8 }
+      ]),
+    body('name').trim().notEmpty().escape(), 
+    body('isCreatedAt').isDate({format: 'YYYY-MM-DD'}).escape(),
+    body('idArtist').isInt().escape(),
+    body('description').trim().notEmpty().escape(),
+    
+    async(req: Request,res: Response)=>{
+        try{
+            const customReq = req as CustomRequest;
+            const {name, isCreatedAt,idArtist,description, idWorks} = req.body ;
+            const sql = "UPDATE works SET name=?, isCreatedAt=?, idArtist=?,  description=? WHERE idWorks=?";
+            const result = validationResult(req);
+            if (result.isEmpty()) {
+                let a: string[] = [] ; 
+                if(customReq.newFileName){
+                    a = customReq.newFileName
+                }
+                const oeuvre = new Oeuvres(name, isCreatedAt,idArtist,description, a);
+                oeuvre.update(sql, res, idWorks)
+            }else{
+                res.send({ errors: result.array() });
+            }  
+        }catch(error){
+            res.status(500).send({message : 'erreur', 'type': error});     
+        }
+    })
 
 module.exports = routerOeuvres ;

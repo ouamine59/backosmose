@@ -36,6 +36,7 @@ const swaggerDocs  = swaggerJsDoc(swaggerOptions)
 appServer.use('/api-doc', swaggerUi.serve , swaggerUi.setup(swaggerDocs))
 
 
+
 const dbServer = require( './config/db.ts' )
 dbServer.connect((err: object) => {
     if (err){
@@ -45,6 +46,8 @@ dbServer.connect((err: object) => {
         console.log('bravo !!');
     }
 })
+
+
 const userRoutes= require('./routes/users.ts');
 appServer.use('/api/users', userRoutes);
 
