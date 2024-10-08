@@ -1,15 +1,16 @@
 "use strict";
-const express = require('express');
+const expressServer = require('express');
 const bodyParser = require('body-parser');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 const cors = require('cors');
-const app = express();
-app.use(cors());
-app.use(cors({
+const appServer = expressServer();
+appServer.use(cors());
+appServer.use(cors({
     origin: 'http://localhost:8080'
 }));
-app.use(bodyParser.json());
+appServer.use(bodyParser.json());
+appServer.use(expressServer.urlencoded({ extended: true }));
 const swaggerOptions = {
     swaggerDefinition: {
         openapi: '3.1.0',
@@ -20,16 +21,16 @@ const swaggerOptions = {
             contact: {
                 name: 'tino'
             },
-            servers: [{ url: 'http://localhost:3606' }]
+            servers: [{ url: 'http://localhost:8889' }]
         }
     },
     apis: ['./routes/*.js']
 };
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 //initialisation du swagger
-app.use('/api-doc', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-const db = require('./config/db.ts');
-db.connect((err) => {
+appServer.use('/api-doc', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+const dbServer = require('./config/db.ts');
+dbServer.connect((err) => {
     if (err) {
         console.log(err);
     }
@@ -38,8 +39,16 @@ db.connect((err) => {
     }
 });
 const userRoutes = require('./routes/users.ts');
-app.use('/api/users', userRoutes);
+appServer.use('/api/users', userRoutes);
+const oeuvresRoutes = require('./routes/oeuvres.ts');
+appServer.use('/api/oeuvres', oeuvresRoutes);
+
+
+const artistRoutes = require('./routes/artist.ts');
+appServer.use('/api/artist', artistRoutes);
+
+
 const port = process.env.PORT || 5050;
-app.listen(port, () => {
+appServer.listen(port, () => {
     console.log(`SERVER  DEMMARE: ${process.env.PORT}`);
 });

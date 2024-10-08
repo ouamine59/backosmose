@@ -178,6 +178,11 @@ routerOeuvres.post('/admin/create',
         res.send({ errors: result.array() });
     }  
 })
+
+
+
+
+
 routerOeuvres.put('/admin/update',
     authenticateJWT,
     upload.fields([{ name: 'image', maxCount: 8 }

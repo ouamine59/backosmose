@@ -54,6 +54,11 @@ appServer.use('/api/users', userRoutes);
 const oeuvresRoutes= require('./routes/oeuvres.ts');
 appServer.use('/api/oeuvres', oeuvresRoutes);
 
+
+const artistRoutes = require('./routes/artist.ts');
+appServer.use('/api/artist', artistRoutes);
+
+
 const port = process.env.PORT || 5050;
 appServer.listen(port, () =>{
     console.log(`SERVER  DEMMARE: ${process.env.PORT}`)
