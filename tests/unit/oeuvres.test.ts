@@ -128,10 +128,7 @@ describe('Test des routes pour les oeuvres', () => {
     const response = await request(app)
       .put('/oeuvres/admin/update')
       .set('Authorization', `Bearer ${token}`)
-
       .field("idWorks", 72)
-
-
     expect(response.status).toBe(201);
     expect(response.body.message).toBe("oeuvres modifié.");
   });
