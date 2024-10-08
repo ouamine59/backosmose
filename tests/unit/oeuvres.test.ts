@@ -4,8 +4,10 @@ import { describe, expect, test, jest } from '@jest/globals';
 import request from 'supertest';
 import express from 'express';
 import path from 'path';
+require ('dotenv').config();
+const secretKey: string |any= process.env.SECRET_KEY; 
 const jwt = require('jsonwebtoken');
-const secretKey = '1988';
+
 const fs = require('fs');
 const routerOeuvres = require('../../routes/oeuvres.ts');
 const db = require('../../config/db');
@@ -30,13 +32,13 @@ describe('Test des routes pour les oeuvres', () => {
   });
 
   it('should create a work (POST /oeuvres/admin/create)', async () => {
-    const testFilePath = path.join(__dirname, '../../uploads/157dae14-6a1b-4408-b12b-2cf48713ad3e-1728290717078-311367625-1728296072200-350538014.jpeg'); 
-    if (!fs.existsSync(testFilePath)) {
+    const testFilePath = path.join(__dirname, '../../uploads/157dae14-6a1b-4408-b12b-2cf48713ad3e-1728377833873-865866823.jpeg'); 
+    if (fs.existsSync(testFilePath)) {
       throw new Error('File not found: ' + testFilePath);
     }
 
     const Oeuvres = {
-      idWorks: "64",
+      idWorks: "72",
       name: "joconde",
       isCreatedAt: "1988-08-03",
       idArtist: "1",
@@ -44,7 +46,7 @@ describe('Test des routes pour les oeuvres', () => {
     };
 
     db.query.mockImplementation((sql: string, values: any) => {
-      return Promise.resolve([{ insertId: 1 }]); // Simule une insertion réussie
+      return Promise.resolve([Oeuvres]); // Simule une insertion réussie
     });
     
     jest.mock('jsonwebtoken', () => ({
@@ -68,7 +70,7 @@ describe('Test des routes pour les oeuvres', () => {
     expect(response.body.message).toBe('oeuvres inserée.');
   });
   it('should update a work (PUT /oeuvres/admin/update)', async () => {
-    const testFilePath = path.join(__dirname, '../../uploads/157dae14-6a1b-4408-b12b-2cf48713ad3e-1728290717078-311367625-1728296072200-350538014.jpeg'); 
+    const testFilePath = path.join(__dirname, '../..uploads/157dae14-6a1b-4408-b12b-2cf48713ad3e-1728377833873-865866823.jpeg'); 
     if (!fs.existsSync(testFilePath)) {
       throw new Error('File not found: ' + testFilePath);
     }
@@ -90,7 +92,6 @@ describe('Test des routes pour les oeuvres', () => {
     }));
     
     const payload = { username: "admin", password: "sss" };
-    const secretKey = '1983';
     const token = jwt.sign(payload, secretKey);
     
     const response = await request(app)
@@ -102,6 +103,34 @@ describe('Test des routes pour les oeuvres', () => {
       .field('idArtist', 1)
       .field('description', 'A wonderful piece of art')
       .attach('image', testFilePath);
+
+    expect(response.status).toBe(201);
+    expect(response.body.message).toBe("oeuvres modifié.");
+  });
+
+  it('should shutdown a work (PUT /oeuvres/admin/shutdown)', async () => {
+
+    const Oeuvres = {
+      idWorks: "72"
+    };
+
+    db.query.mockImplementation((sql: string, values: any) => {
+      return Promise.resolve([{ idWorks: 72 }]); // Simule une insertion réussie
+    });
+    
+    jest.mock('jsonwebtoken', () => ({
+      sign: jest.fn().mockReturnValue('mockToken'),
+    }));
+    
+    const payload = { username: "admin", password: "sss" };
+    const token = jwt.sign(payload, secretKey);
+    
+    const response = await request(app)
+      .put('/oeuvres/admin/update')
+      .set('Authorization', `Bearer ${token}`)
+
+      .field("idWorks", 72)
+
 
     expect(response.status).toBe(201);
     expect(response.body.message).toBe("oeuvres modifié.");
