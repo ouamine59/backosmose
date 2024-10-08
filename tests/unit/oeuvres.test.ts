@@ -29,16 +29,13 @@ describe('Test des routes pour les oeuvres', () => {
 
   afterAll(() => {
     jest.clearAllMocks();
+
   });
 
   it('should create a work (POST /oeuvres/admin/create)', async () => {
     const testFilePath = path.join(__dirname, '../../uploads/157dae14-6a1b-4408-b12b-2cf48713ad3e-1728377833873-865866823.jpeg'); 
-    if (fs.existsSync(testFilePath)) {
-      throw new Error('File not found: ' + testFilePath);
-    }
-
     const Oeuvres = {
-      idWorks: "72",
+      idWorks: "75",
       name: "joconde",
       isCreatedAt: "1988-08-03",
       idArtist: "1",
@@ -54,7 +51,6 @@ describe('Test des routes pour les oeuvres', () => {
     }));
     
     const payload = { username: "admin", password: "sss" };
-    const secretKey = '1983';
     const token = jwt.sign(payload, secretKey);
     
     const response = await request(app)
@@ -70,13 +66,9 @@ describe('Test des routes pour les oeuvres', () => {
     expect(response.body.message).toBe('oeuvres inserée.');
   });
   it('should update a work (PUT /oeuvres/admin/update)', async () => {
-    const testFilePath = path.join(__dirname, '../..uploads/157dae14-6a1b-4408-b12b-2cf48713ad3e-1728377833873-865866823.jpeg'); 
-    if (!fs.existsSync(testFilePath)) {
-      throw new Error('File not found: ' + testFilePath);
-    }
-
+    const testFilePath = path.join(__dirname, '../../uploads/157dae14-6a1b-4408-b12b-2cf48713ad3e-1728377833873-865866823.jpeg'); 
     const Oeuvres = {
-      idWorks: "64",
+      idWorks: "75",
       name: "joconde",
       isCreatedAt: "1988-08-03",
       idArtist: "1",
@@ -98,7 +90,7 @@ describe('Test des routes pour les oeuvres', () => {
       .put('/oeuvres/admin/update')
       .set('Authorization', `Bearer ${token}`)
       .field('name', 'Test Oeuvre')
-      .field("idWorks", 64)
+      .field("idWorks",75)
       .field('isCreatedAt', '2024-10-01')
       .field('idArtist', 1)
       .field('description', 'A wonderful piece of art')
@@ -109,31 +101,26 @@ describe('Test des routes pour les oeuvres', () => {
   });
 
   it('should shutdown a work (PUT /oeuvres/admin/shutdown)', async () => {
-
     const Oeuvres = {
-      idWorks: "72"
+      idWorks: 75
     };
-
     db.query.mockImplementation((sql: string, values: any) => {
-      return Promise.resolve([{ idWorks: 72 }]); // Simule une insertion réussie
+      return Promise.resolve(Oeuvres); // Simule une insertion réussie
     });
-    
+    db.query.mockImplementationOnce((sql:string, values:any, callback:any) => {
+      callback(null, { affectedRows: 1 });
+    });
     jest.mock('jsonwebtoken', () => ({
       sign: jest.fn().mockReturnValue('mockToken'),
     }));
-    
     const payload = { username: "admin", password: "sss" };
     const token = jwt.sign(payload, secretKey);
-    
     const response = await request(app)
-      .put('/oeuvres/admin/update')
+      .put('/oeuvres/admin/shutdown')
       .set('Authorization', `Bearer ${token}`)
-
-      .field("idWorks", 72)
-
-
+      .send({"idWorks":75})
     expect(response.status).toBe(201);
-    expect(response.body.message).toBe("oeuvres modifié.");
+    expect(response.body.message).toBe("oeuvres shudown");
   });
 });
 
