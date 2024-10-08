@@ -144,7 +144,7 @@ class Oeuvres{
                     if(err){
                        return res.status(500).send({message : 'erreur', 'type': err});
                     }
-                    res.status(200).send({'message':"oeuvres shudown"})   
+                    res.status(201).send({'message':"oeuvres shudown"})   
                })
            }else{
                return res.status(500).send({message : 'pas dans bdd'});
