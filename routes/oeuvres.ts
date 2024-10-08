@@ -84,7 +84,6 @@ class Oeuvres{
             if(err){
                 return res.status(500).send({message : 'erreur', 'type': err});
             } 
-
             const workId = results.insertId;
             const sqlPicture :string = "INSERT INTO pictures(pictures, idWorks ) VALUES (?,?)"
             for(let i = 0;i <this.pictures.length ;i++){
@@ -103,8 +102,7 @@ class Oeuvres{
          dbOeuvres.query(isInDB, [  id], async (err: Error | null, results : any)=>{
             console.log(results)
               if(results.length >0){
-                res.status(201).send({'message':"oeuvres modifié."}) 
-                dbOeuvres.query(sql, [ this.name, this.isCreatedAt,this.idArtist,this.description, id], async (err: Error | null, results : InsertResult)=>{
+               dbOeuvres.query(sql, [ this.name, this.isCreatedAt,this.idArtist,this.description, id], async (err: Error | null, results : InsertResult)=>{
                     if(err){
                         return res.status(500).send({message : 'erreur', 'type': err});
                     }
@@ -139,15 +137,14 @@ class Oeuvres{
         })
      }
      shutDown = (sql: string,res: Response, id:number)=>{
-        const isInDB:string ="SELECT * FROM works WHERE idWorks =?";
+        const isInDB:string ="SELECT * FROM works WHERE idWorks=?";
         dbOeuvres.query(isInDB, [id], async (err: Error | null, results : any)=>{
-           console.log(results)
-             if(results.length >0){ 
-               dbOeuvres.query(sql, [ id], async (err: Error | null, results : InsertResult)=>{
+            if(results.length >0){ 
+                dbOeuvres.query(sql, [ id], async (err: Error | null, results : InsertResult)=>{
                     if(err){
                        return res.status(500).send({message : 'erreur', 'type': err});
                     }
-                    res.status(201).send({'message':"oeuvres shudown"})   
+                    res.status(200).send({'message':"oeuvres shudown"})   
                })
            }else{
                return res.status(500).send({message : 'pas dans bdd'});
@@ -211,6 +208,7 @@ routerOeuvres.put('/admin/update',
         }
     })
 routerOeuvres.put('/admin/shutdown',
+    authenticateJWT,
     async(req: Request,res: Response)=>{
         try{
             const {idWorks} = req.body ;
