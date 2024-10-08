@@ -119,6 +119,7 @@ describe('Test des routes pour les oeuvres', () => {
       .put('/oeuvres/admin/shutdown')
       .set('Authorization', `Bearer ${token}`)
       .send({"idWorks":75})
+
     expect(response.status).toBe(201);
     expect(response.body.message).toBe("oeuvres shudown");
   });
