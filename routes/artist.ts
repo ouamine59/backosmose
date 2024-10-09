@@ -139,5 +139,27 @@ router.put(
     }
 );
 
+
+
+
+router.get(
+    '/list', // Route pour obtenir tous les artistes
+    authenticateJWT, // Appliquer le middleware ici si nécessaire
+    (req: Request, res: Response) => {
+        // SQL query to get all artists
+        const sql = 'SELECT * FROM artist';
+
+        db.query(sql, (err: Error | null, results: any) => {
+            if (err) {
+                return res.status(500).json({ message: 'Erreur lors de la récupération des artistes', error: err });
+            }
+
+            // Send success response with the list of artists
+            res.status(200).json(results);
+        });
+    }
+);
+
+
 // Export the router
 module.exports = router;
