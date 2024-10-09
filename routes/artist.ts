@@ -16,55 +16,11 @@ interface Artist {
     idCountry: number;
 }
 
-interface CustomRequest extends Request {
-    newFileName?: string[]; 
-}
 
-// Setup for file uploads
-const storage = multer.diskStorage({
-    destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
-        const path = `./uploads`;
-        fs.mkdirSync(path, { recursive: true });  
-        return cb(null, path);
-    },
-    filename: async (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const customReq = req as CustomRequest;
-        const namePicture = file.originalname;
-        const splitNamePicture = namePicture.split('.');
-        const typeName = splitNamePicture.pop(); 
-        const originalName = splitNamePicture.join('.');
-
-        // Create a unique filename
-        let newFileName = `${originalName}-${uniqueSuffix}.${typeName}`;
-        
-        // Check if the filename already exists in the database
-        let fileExists = await checkIfFileExistsInDB(newFileName);
-        while (fileExists) {
-            const newUniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            newFileName = `${originalName}-${newUniqueSuffix}.${typeName}`;
-            fileExists = await checkIfFileExistsInDB(newFileName);
-        }
-        
-        if (!customReq.newFileName) {
-            customReq.newFileName = [];
-        }
-        customReq.newFileName.push(newFileName);
-        cb(null, newFileName);
-    }
-});
-
-async function checkIfFileExistsInDB(filename: string): Promise<boolean> {
-    const sql = 'SELECT pictures FROM pictures WHERE pictures = ?';
-    const [results] = await db.promise().query(sql, [filename]);
-    return results.length > 0;
-}
-
-const upload = multer({ storage: storage });
 
 // Route for adding an artist
 router.post(
-    '/add',
+    '/create',
     authenticateJWT, // Apply middleware here
     // Validation of input data
     body('name').trim().notEmpty().withMessage('Name is required'),
@@ -90,31 +46,32 @@ router.post(
 );
 
 // Route for modifying an artist by ID
-router.put('/edit/:idArtist', 
-    authenticateJWT, // Apply middleware here
+router.put('/edit', 
+    authenticateJWT, // Appliquer le middleware ici
     body('description').trim().optional(),
     body('name').trim().optional(),
-    body('birthDay').optional().isISO8601().toDate().withMessage('Invalid birthDay format'),
-    body('idCountry').optional().isInt().withMessage('Invalid idCountry'),
+    body('birthDay').optional().isISO8601().toDate().withMessage('Le format de la date de naissance est invalide'),
+    body('idCountry').optional().isInt().withMessage('idCountry doit être un entier valide'),
+    body('idArtist').isInt().withMessage('idArtist est obligatoire et doit être un entier'), // Validation de idArtist dans le corps de la requête
     (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { idArtist } = req.params;  // Retrieve idArtist from URL parameters
-        const { description, birthDay, idCountry, name } = req.body;
+        const { description, birthDay, idCountry, name, idArtist } = req.body; // Récupérer idArtist depuis le corps de la requête
 
-        // Correct the order of parameters
+        // Ordre correct des paramètres
         const sql = 'UPDATE artist SET description = ?, name = ?, birthDay = ?, idCountry = ? WHERE idArtist = ?';
         db.query(sql, [description, name, birthDay, idCountry, idArtist], (err: Error, result: any) => {
             if (err) {
-                return res.status(500).send({ message: 'Error updating artist', error: err });
+                return res.status(500).send({ message: 'Erreur lors de la mise à jour de l\'artiste', error: err });
             }
-            res.status(200).send({ message: 'Artist mise à jour !', result });
+            res.status(200).send({ message: 'Artiste mis à jour avec succès !', result });
         });
     }
 );
+
 
 // Route for disabling an artist by ID
 router.put(

@@ -7,7 +7,7 @@ const cors = require('cors');
 const appServer = expressServer();
 appServer.use(cors());
 appServer.use(cors({
-    origin: 'http://localhost:8080'
+    origin: 'http://localhost:3000'
 }));
 appServer.use(bodyParser.json());
 appServer.use(expressServer.urlencoded({ extended: true }));
@@ -42,12 +42,10 @@ const userRoutes = require('./routes/users.ts');
 appServer.use('/api/users', userRoutes);
 const oeuvresRoutes = require('./routes/oeuvres.ts');
 appServer.use('/api/oeuvres', oeuvresRoutes);
-
-
 const artistRoutes = require('./routes/artist.ts');
 appServer.use('/api/artist', artistRoutes);
-
-
+const expoRoutes = require('./routes/expo.ts');
+appServer.use('/api/expo', expoRoutes);
 const port = process.env.PORT || 5050;
 appServer.listen(port, () => {
     console.log(`SERVER  DEMMARE: ${process.env.PORT}`);
