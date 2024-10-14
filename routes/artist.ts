@@ -8,26 +8,72 @@ const multer = require('multer');
 const fs = require("fs");
 const { unlink } = require('node:fs');
 
+interface CustomRequest extends Request {
+    newFileName?: string[]; 
+  }
+
+const storage = multer.diskStorage({
+    destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
+        const path = `./uploads`
+        fs.mkdirSync(path, { recursive: true })  
+        return cb(null, path);
+    },
+    filename: async (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const customReq = req as CustomRequest;
+        const namePicture = file.originalname;
+        const splitNamePicture = namePicture.split('.');
+        const typeName = splitNamePicture.pop(); 
+        const originalName = splitNamePicture.join('.'); // nom sans extension
+    
+        // Créer un nom de fichier unique
+        let newFileName = `${originalName}-${uniqueSuffix}.${typeName}`;
+    
+        // Vérifier dans la base de données si le nom existe déjà
+        let fileExists = await checkIfFileExistsInDB(newFileName);
+        while (fileExists) {
+          const newUniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          newFileName = `${originalName}-${newUniqueSuffix}.${typeName}`;
+          fileExists = await checkIfFileExistsInDB(newFileName);
+        }
+        if (!customReq.newFileName) {
+            customReq.newFileName = [];
+          }
+        customReq.newFileName.push(newFileName);
+        cb(null, newFileName);
+        
+      }
+})
+async function checkIfFileExistsInDB(filename: string): Promise<boolean> {
+    const sql = 'SELECT photo FROM artist WHERE photo = ?';
+    const [results] = await db.promise().query(sql, [filename]);
+    return results.length > 0;
+}
+  const upload = multer({ storage: storage })
+
 interface Artist {
     id: number;
     name: string;
     description: string;
     birthDay: string;
     idCountry: number;
+    pictures:string[];
 }
 
 
 
 // Route for adding an artist
+// Route for adding an artist
 router.post(
     '/create',
     authenticateJWT, // Apply middleware here
+    upload.single('photo'), // Handle single file upload
     // Validation of input data
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('description').trim().notEmpty().withMessage('Description is required'),
     body('birthDay').isISO8601().toDate().withMessage('Invalid birthDay format'),
     body('idCountry').isInt().withMessage('Invalid idCountry'),
-    (req: Request, res: Response) => {
+    async (req: CustomRequest, res: Response) => { // Changed req type to CustomRequest
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
@@ -35,8 +81,11 @@ router.post(
 
         const { name, description, birthDay, idCountry } = req.body;
 
-        const sql = 'INSERT INTO artist (name, description, birthDay, idCountry) VALUES (?, ?, ?, ?)';
-        db.query(sql, [name, description, birthDay, idCountry], (err: Error, result: any) => {
+        // Use uploaded file name for the artist
+        const photo = req.file ? req.file.filename : null;
+
+        const sql = 'INSERT INTO artist (name, description, birthDay, idCountry, photo) VALUES (?, ?, ?, ?, ?)';
+        db.query(sql, [name, description, birthDay, idCountry, photo], (err: Error, result: any) => {
             if (err) {
                 return res.status(500).send({ message: 'Mauvais format', error: err });
             }
@@ -44,6 +93,7 @@ router.post(
         });
     }
 );
+
 
 // Route for modifying an artist by ID
 router.put('/edit', 
@@ -138,6 +188,27 @@ router.put(
         });
     }
 );
+
+
+
+router.get(
+    '/list', // Route pour obtenir tous les artistes
+    authenticateJWT, // Appliquer le middleware ici si nécessaire
+    (req: Request, res: Response) => {
+        // SQL query to get all artists
+        const sql = 'SELECT * FROM artist';
+
+        db.query(sql, (err: Error | null, results: any) => {
+            if (err) {
+                return res.status(500).json({ message: 'Erreur lors de la récupération des artistes', error: err });
+            }
+
+            // Send success response with the list of artists
+            res.status(200).json(results);
+        });
+    }
+);
+
 
 // Export the router
 module.exports = router;

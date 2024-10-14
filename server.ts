@@ -1,59 +1,60 @@
-const expressServer   = require('express');
-const bodyParser= require('body-parser');
+const expressServer = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
-
-
-
-const swaggerJsDoc = require('swagger-jsdoc')
-const swaggerUi = require('swagger-ui-express')
-const cors = require('cors'); 
 const appServer = expressServer();
 
-appServer.use(cors());
+// Middleware pour servir les fichiers statiques (images, etc.)
+appServer.use('/uploads', express.static('uploads'));
+
+// CORS
 appServer.use(cors({
-    origin:'http://localhost:3000'
+    origin: 'http://localhost:3000'
 }));
-appServer.use(bodyParser.json())
+
+// Body Parser
+appServer.use(bodyParser.json());
 appServer.use(expressServer.urlencoded({ extended: true }));
+
+// Swagger configuration
 const swaggerOptions = {
-    swaggerDefinition : {
+    swaggerDefinition: {
         openapi: '3.1.0',
-        info : {
+        info: {
             title: 'API QUIZZ',
-            version : '0.0.1',
-            description : 'Je suis une super API',
-            contact : {
-                name :'tino'
+            version: '0.0.1',
+            description: 'Je suis une super API',
+            contact: {
+                name: 'tino'
             },
-            servers : [{ url: 'http://localhost:8889'}]
+            servers: [{ url: 'http://localhost:8889' }]
         }
     },
-    apis : ['./routes/*.js']
-}
+    apis: ['./routes/*.js'] // Changez ce chemin si nécessaire
+};
 
-const swaggerDocs  = swaggerJsDoc(swaggerOptions)
-//initialisation du swagger
-appServer.use('/api-doc', swaggerUi.serve , swaggerUi.setup(swaggerDocs))
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+// Initialisation de Swagger
+appServer.use('/api-doc', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-
-
-const dbServer = require( './config/db.ts' )
-dbServer.connect((err: object) => {
-    if (err){
+// Démarrage de la connexion à la base de données
+const dbServer = require('./config/db.ts');
+dbServer.connect((err) => {
+    if (err) {
         console.log(err);
-    }
-    else{
+    } else {
         console.log('bravo !!');
     }
-})
+});
 
-
-const userRoutes= require('./routes/users.ts');
+// Routes
+const userRoutes = require('./routes/users.ts');
 appServer.use('/api/users', userRoutes);
 
-const oeuvresRoutes= require('./routes/oeuvres.ts');
+const oeuvresRoutes = require('./routes/oeuvres.ts');
 appServer.use('/api/oeuvres', oeuvresRoutes);
-
 
 const artistRoutes = require('./routes/artist.ts');
 appServer.use('/api/artist', artistRoutes);
@@ -61,9 +62,8 @@ appServer.use('/api/artist', artistRoutes);
 const expoRoutes = require('./routes/expo.ts');
 appServer.use('/api/expo', expoRoutes);
 
-
+// Démarrage du serveur
 const port = process.env.PORT || 5050;
-appServer.listen(port, () =>{
-    console.log(`SERVER  DEMMARE: ${process.env.PORT}`)
-
-})
+appServer.listen(port, () => {
+    console.log(`SERVER DEMMARRE: ${port}`);
+});
