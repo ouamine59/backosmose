@@ -138,6 +138,26 @@ router.put(
         });
     }
 );
-
+router.get(
+    '/listing-for-selectInput', 
+        (req: Request, res: Response) => {
+ 
+        const sql = 'SELECT * FROM artist ;';
+        type Artist = {
+            value:number;
+            label:string ;
+        }
+        db.query(sql, (err: Error | null, result: any) => {
+            if (err) {
+                return res.status(500).json({ message: 'Aucun artiste trouvé.', error: err });
+            }
+            let artistes  :Artist[]= [];
+            for(let i =0; i < result.length;i++){
+                artistes.push({ 'value': result[i].idArtist, 'label': result[i].name})
+            }
+            return res.status(200).json(artistes);
+        });
+    }
+);
 // Export the router
 module.exports = router;
