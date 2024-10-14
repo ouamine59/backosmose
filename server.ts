@@ -15,6 +15,7 @@ appServer.use(cors({
 }));
 appServer.use(bodyParser.json())
 appServer.use(expressServer.urlencoded({ extended: true }));
+appServer.use('/uploads', expressServer.static(process.cwd() + '/uploads'))
 const swaggerOptions = {
     swaggerDefinition : {
         openapi: '3.1.0',

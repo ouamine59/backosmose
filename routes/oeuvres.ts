@@ -5,9 +5,10 @@ import authenticateJWT from '../middleware/authenticateJWT';
 import { unlink } from 'node:fs';
 const dbOeuvres = require( '../config/db.ts' )
 const { query, validationResult , check, body} = require('express-validator');
-
+import path from 'path';
 const fs = require("fs");
 const multer  = require('multer');
+
 interface CustomRequest extends Request {
     newFileName?: string[]; 
   }
@@ -225,6 +226,7 @@ routerOeuvres.post('/admin/create',
 })
 
 routerOeuvres.post('/listing',
+    
     body('idCategories').isInt().escape(),
     async(req: Request,res: Response)=>{
 
