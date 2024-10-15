@@ -57,7 +57,6 @@ async function checkIfFileExistsInDB(filename: string): Promise<boolean> {
 interface Oeuvres {
     id: number;
     name: string;
-    isCreatedAt : string;
     idArtist: number;
     description: string;
     pictures:string[];
@@ -70,9 +69,8 @@ interface InsertResult {
   }
   let pictures:  string[] =[]
 class Oeuvres{
-    constructor( name: string, isCreatedAt: string,idArtist:number,description:string, pictures:string[]){
+    constructor( name: string,idArtist:number,description:string, pictures:string[]){
         this.name = name;
-        this.isCreatedAt = isCreatedAt;
         this.idArtist = idArtist
         this.description = description ;
         this.pictures = pictures;
@@ -80,7 +78,7 @@ class Oeuvres{
 
 
     create = (sql: string,res: Response)=>{
-       dbOeuvres.query(sql, [ this.name, this.isCreatedAt,this.idArtist,this.description], async (err: Error | null, results : InsertResult)=>{
+       dbOeuvres.query(sql, [ this.name,this.idArtist,this.description], async (err: Error | null, results : InsertResult)=>{
             if(err){
                 return res.status(500).send({message : 'erreur', 'type': err});
             } 
@@ -102,7 +100,7 @@ class Oeuvres{
          dbOeuvres.query(isInDB, [  id], async (err: Error | null, results : any)=>{
             console.log(results)
               if(results.length >0){
-               dbOeuvres.query(sql, [ this.name, this.isCreatedAt,this.idArtist,this.description, id], async (err: Error | null, results : InsertResult)=>{
+               dbOeuvres.query(sql, [ this.name,this.idArtist,this.description, id], async (err: Error | null, results : InsertResult)=>{
                     if(err){
                         return res.status(500).send({message : 'erreur', 'type': err});
                     }
@@ -158,21 +156,20 @@ routerOeuvres.post('/admin/create',
     authenticateJWT,
     upload.fields([{ name: 'image', maxCount: 8 }]),
     body('name').trim().notEmpty().escape(), 
-    body('isCreatedAt').isDate({format: 'YYYY-MM-DD'}).escape(),
     body('idArtist').isInt().escape(),
     body('description').trim().notEmpty().escape(),
     
     async(req: Request,res: Response)=>{
     const customReq = req as CustomRequest;
-    const {name, isCreatedAt,idArtist,description} = req.body ;
-    const sql = "INSERT INTO works(name, isCreatedAt,idArtist,description) VALUES (?,?,?,?)";
+    const {name,idArtist,description} = req.body ;
+    const sql = "INSERT INTO works(name,idArtist,description) VALUES (?,?,?,?)";
     const result = validationResult(req);
     if (result.isEmpty()) {
         let a: string[] = [] ; 
         if(customReq.newFileName){
             a = customReq.newFileName
         }
-        const oeuvre = new Oeuvres(name, isCreatedAt,idArtist,description, a);
+        const oeuvre = new Oeuvres(name, idArtist,description, a);
         oeuvre.create(sql, res )
     }else{
         res.send({ errors: result.array() });
@@ -188,22 +185,21 @@ routerOeuvres.put('/admin/update',
     upload.fields([{ name: 'image', maxCount: 8 }
       ]),
     body('name').trim().notEmpty().escape(), 
-    body('isCreatedAt').isDate({format: 'YYYY-MM-DD'}).escape(),
     body('idArtist').isInt().escape(),
     body('description').trim().notEmpty().escape(),
     
     async(req: Request,res: Response)=>{
         try{
             const customReq = req as CustomRequest;
-            const {name, isCreatedAt,idArtist,description, idWorks} = req.body ;
-            const sql = "UPDATE works SET name=?, isCreatedAt=?, idArtist=?,  description=? WHERE idWorks=?";
+            const {name,idArtist,description, idWorks} = req.body ;
+            const sql = "UPDATE works SET name=?, idArtist=?,  description=? WHERE idWorks=?";
             const result = validationResult(req);
             if (result.isEmpty()) {
                 let a: string[] = [] ; 
                 if(customReq.newFileName){
                     a = customReq.newFileName
                 }
-                const oeuvre = new Oeuvres(name, isCreatedAt,idArtist,description, a);
+                const oeuvre = new Oeuvres(name,idArtist,description, a);
                 oeuvre.update(sql, res, idWorks)
             }else{
                 res.send({ errors: result.array() });
@@ -220,7 +216,7 @@ routerOeuvres.put('/admin/shutdown',
             const sql = "UPDATE works SET isAvailable= 0 WHERE idWorks=?";
             const result = validationResult(req);
             if (result.isEmpty()) {
-                const oeuvre = new Oeuvres("", "",1,"description", []);
+                const oeuvre = new Oeuvres("",1,"description", []);
                 oeuvre.shutDown(sql, res, idWorks)
             }else{
                 res.send({ errors: result.array() });
@@ -229,4 +225,22 @@ routerOeuvres.put('/admin/shutdown',
             res.status(500).send({message : 'erreur', 'type': error});     
         }
     })
+
+
+    routerOeuvres.get('/list', authenticateJWT, (req: Request, res: Response) => {
+        // SQL query to get all works
+        const sql = 'SELECT * FROM works';
+    
+        db.query(sql, (err: Error | null, results: any) => {
+            if (err) {
+                return res.status(500).json({ message: 'Erreur lors de la récupération des œuvres', error: err });
+            }
+    
+            // Send success response with the list of works
+            res.status(200).json(results);
+        });
+    });
+
+
+    
 module.exports = routerOeuvres ;
