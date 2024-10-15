@@ -80,7 +80,7 @@ router.post(
         }
 
         const { name, description, birthDay, idCountry } = req.body;
-
+        console.log(req.body); // Pour voir ce qui est reçu
         // Use uploaded file name for the artist
         const photo = req.file ? req.file.filename : null;
 
@@ -98,6 +98,7 @@ router.post(
 // Route for modifying an artist by ID
 router.put('/edit', 
     authenticateJWT, // Appliquer le middleware ici
+    upload.single('photo'), // Middleware Multer pour traiter le fichier
     body('description').trim().optional(),
     body('name').trim().optional(),
     body('birthDay').optional().isISO8601().toDate().withMessage('Le format de la date de naissance est invalide'),
@@ -110,10 +111,12 @@ router.put('/edit',
         }
 
         const { description, birthDay, idCountry, name, idArtist } = req.body; // Récupérer idArtist depuis le corps de la requête
+        const photo = req.file?.filename; // Récupérer le nom du fichier uploadé
+   
 
         // Ordre correct des paramètres
-        const sql = 'UPDATE artist SET description = ?, name = ?, birthDay = ?, idCountry = ? WHERE idArtist = ?';
-        db.query(sql, [description, name, birthDay, idCountry, idArtist], (err: Error, result: any) => {
+        const sql = 'UPDATE artist SET description = ?, name = ?, birthDay = ?, idCountry = ?, photo = ? WHERE idArtist = ?';
+        db.query(sql, [description, name, birthDay, idCountry, photo, idArtist], (err: Error, result: any) => {
             if (err) {
                 return res.status(500).send({ message: 'Erreur lors de la mise à jour de l\'artiste', error: err });
             }
