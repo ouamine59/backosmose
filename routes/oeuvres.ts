@@ -244,4 +244,34 @@ routerOeuvres.get('/list', authenticateJWT, (req: Request, res: Response) => {
     });
 });
 
+
+routerOeuvres.get('/featured', (req: Request, res: Response) => {
+    // SQL query to get all featured works with associated pictures and artist names
+    const sql = `
+        SELECT a.name AS artist_name, w.name AS painting_name, GROUP_CONCAT(p.pictures) AS pictures
+        FROM works w
+        JOIN artist a ON w.idArtist = a.idArtist
+        LEFT JOIN pictures p ON w.idWorks = p.idWorks
+        WHERE w.isFeatured = 1
+        GROUP BY w.idWorks
+    `;
+    
+    dbOeuvres.query(sql, (err: Error | null, results: any) => {
+        if (err) {
+            return res.status(500).json({ message: 'Erreur lors de la récupération des œuvres en vedette', error: err });
+        }
+
+        // Process results to convert pictures from comma-separated string to an array
+        const formattedResults = results.map((work: any) => ({
+            artist_name: work.artist_name,
+            painting_name: work.painting_name,
+            pictures: work.pictures ? work.pictures.split(',') : [] // Split pictures into an array
+        }));
+
+        // Send success response with the list of featured works and their associated pictures
+        res.status(200).json(formattedResults);
+    });
+});
+
+
 module.exports = routerOeuvres;
