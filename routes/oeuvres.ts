@@ -195,10 +195,51 @@ class Oeuvres{
             }
         })
     }
-            
+    detail = (res: Response, id:number)=>{
+        let oeuvres  :Oeuvres[]= [];
+        interface Pictures{
+            idPictures:number;
+            pictures : string;
+            idWorks : number ;
+        }
+        interface Oeuvres {
+            idWorks :number;
+            name:string;
+            isCreatedAt: string;
+            idArtist:number;
+            description:string;
+            pictures :Pictures[] ;
+            artiste :string;
+        }
+        const sql = "SELECT *, a.name AS nameartiste, w.name AS nameoeuvre FROM works w INNER JOIN artist a ON a.idArtist = w.idArtist WHERE w.idWorks = ?";       
+        dbOeuvres.query(sql, [id], async (err: Error | null, results : any)=>{    
+            if (results.length > 0) {
+                await Promise.all(results.map(async (work: any) => {
+                    const sqlPictures = "SELECT * FROM pictures WHERE idWorks = ?";                 
+                    const [picturesResults] = await dbOeuvres.promise().query(sqlPictures, [work.idWorks]);   
+                    let pictures: Pictures[] = picturesResults.map((pic: any) => ({
+                        idPictures: pic.idPictures,
+                        pictures: pic.pictures,
+                        idWorks: pic.idWorks
+                    }));  
+                    oeuvres.push({
+                        idWorks: work.idWorks,
+                        name: work.nameoeuvre,
+                        isCreatedAt: work.isCreatedAt,
+                        idArtist: work.idArtist,
+                        artiste:work.nameartiste,
+                        description: work.description,
+                        pictures: pictures
+                    });
+                }));
+                return res.status(200).send(oeuvres);
+            } else {
+                return res.status(404).send({ message: 'Aucune œuvre trouvée dans cette catégorie.' });
+            }
+        })
+    }          
     
 }
-
 
 routerOeuvres.post('/admin/create',
     authenticateJWT,
@@ -209,39 +250,60 @@ routerOeuvres.post('/admin/create',
     body('description').trim().notEmpty().escape(),
     
     async(req: Request,res: Response)=>{
-    const customReq = req as CustomRequest;
-    const {name, isCreatedAt,idArtist,description} = req.body ;
-    const sql = "INSERT INTO works(name, isCreatedAt,idArtist,description, idCategories) VALUES (?,?,?,?,1)";
-    const result = validationResult(req);
-    if (result.isEmpty()) {
-        let a: string[] = [] ; 
-        if(customReq.newFileName){
-            a = customReq.newFileName
-        }
-        const oeuvre = new Oeuvres(name, isCreatedAt,idArtist,description, a);
-        oeuvre.create(sql, res )
-    }else{
-        res.send({ errors: result.array() });
-    }  
+        try{
+            const customReq = req as CustomRequest;
+            const {name, isCreatedAt,idArtist,description} = req.body ;
+            const sql = "INSERT INTO works(name, isCreatedAt,idArtist,description, idCategories) VALUES (?,?,?,?,1)";
+            const result = validationResult(req);
+            if (result.isEmpty()) {
+                let a: string[] = [] ; 
+                if(customReq.newFileName){
+                    a = customReq.newFileName
+                }
+                const oeuvre = new Oeuvres(name, isCreatedAt,idArtist,description, a);
+                oeuvre.create(sql, res )
+            }else{
+                res.send({ errors: result.array() });
+            } 
+        }catch(error){
+            res.status(500).send({'message':error})
+        } 
 })
 
-routerOeuvres.post('/listing',
-    
+routerOeuvres.post('/listing',   
     body('idCategories').isInt().escape(),
     async(req: Request,res: Response)=>{
-
-    const {idCategories} = req.body ;
-    
-    const result = validationResult(req);
-    if (result.isEmpty()) {
-        let a: string[] = [] ; 
-        const oeuvre = new Oeuvres("", "",1,"", a);
-        oeuvre.listing( res , idCategories)
-    }else{
-        res.send({ errors: result.array() });
+    try{
+        const {idCategories} = req.body ;
+        const result = validationResult(req);
+        if (result.isEmpty()) {
+            let a: string[] = [] ; 
+            const oeuvre = new Oeuvres("", "",1,"", a);
+            oeuvre.listing( res , idCategories)
+        }else{
+            res.send({ errors: result.array() });
+        } 
+    }catch(error){
+        res.status(500).send({'message':error})
     }  
 })
-
+routerOeuvres.post('/detail',  
+    body('idWorks').isInt().escape(),
+    async(req: Request,res: Response)=>{
+    try{
+        const {idWorks} = req.body ; 
+        const result = validationResult(req);
+        if (result.isEmpty()) {
+            let a: string[] = [] ; 
+            const oeuvre = new Oeuvres("", "",1,"", a);
+            oeuvre.detail( res , idWorks)
+        }else{
+            res.send({ errors: result.array() });
+        }  
+    }catch(error){
+        res.status(500).send({'message':error})
+    } 
+})
 
 
 routerOeuvres.put('/admin/update',

@@ -159,5 +159,104 @@ router.get(
         });
     }
 );
+
+
+router.get(
+    '/listing', 
+        (req: Request, res: Response) => {
+ 
+        const sql = 'SELECT *,a.name AS nameArtist,  c.name AS country FROM artist a INNER JOIN country c ON a.idCountry = c.idCountry ;';
+        interface Artist  {
+            idArtist: number; // Ajout d'un ID pour la clé unique
+            nameArtist: string;
+            birthDay: string;
+            country: string;
+            description:string;
+          }
+        db.query(sql, (err: Error | null, result: any) => {
+            if (err) {
+                return res.status(500).json({ message: 'Aucun artiste trouvé.', error: err });
+            }
+            let artistes  :Artist[]= [];
+            for(let i =0; i < result.length;i++){
+                artistes.push({
+                    'idArtist': result[i].idArtist,
+                    'nameArtist':result[i].nameArtist,
+                    'birthDay': result[i].birthDay,
+                    'country': result[i].country,
+                    'description' :result[i].description})
+            }
+            return res.status(200).json(artistes);
+        });
+    }
+);
+
+router.post(
+    '/detail',
+    body('idArtist').isInt().withMessage('Invalid idArtist'),
+    (req: Request, res: Response) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { idArtist } = req.body;
+        let oeuvres: Oeuvres[] = [];
+        
+        interface Pictures {
+            idPictures: number;
+            pictures: string;
+            idWorks: number;
+        }
+
+        interface Oeuvres {
+            description: string;
+            pictures: Pictures[];
+            artiste: string;
+            image: string ;
+        }
+
+        // Requête pour récupérer les œuvres de l'artiste
+        const sql = 'SELECT * , a.name AS nameartiste, a.description AS descriptionArtist FROM artist a INNER JOIN works w ON a.idArtist = w.idArtist  WHERE a.idArtist = ?';
+        db.query(sql, [idArtist], (err: Error, re: any) => {
+            if (err) {
+                return res.status(500).send({ message: 'Erreur lors de la récupération des œuvres', error: err });
+            }
+
+            // Vérifier si une œuvre existe pour cet artiste
+            if (re.length === 0) {
+                return res.status(404).send({ message: 'Aucune œuvre trouvée pour cet artiste.' });
+            }
+
+            // Requête pour récupérer les images liées à l'œuvre
+            const sqlPictures = 'SELECT * FROM pictures WHERE idWorks = ?';
+            db.query(sqlPictures, [re[0].idWorks], (err: Error, r: any) => {
+                if (err) {
+                    return res.status(500).send({ message: 'Erreur lors de la récupération des images', error: err });
+                }
+
+                // Construction des objets Pictures
+                let pictures: Pictures[] = r.map((pic: any) => ({
+                    idPictures: pic.idPictures,
+                    pictures: pic.pictures,
+                    idWorks: pic.idWorks
+                }));
+
+                // Ajout de l'œuvre avec les images récupérées
+                oeuvres.push({
+                    artiste: re[0].nameartiste, // Vérifie que ce champ est bien présent
+                    description: re[0].descriptionArtist,
+                    pictures: pictures,
+                    image: re[0].image
+                });
+
+                res.status(200).send(oeuvres);
+            });
+        });
+    }
+);
+
+
+
 // Export the router
 module.exports = router;
