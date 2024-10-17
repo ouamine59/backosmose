@@ -14,8 +14,10 @@ appServer.use(cors({
     origin:'http://localhost:3000'
 }));
 appServer.use(bodyParser.json())
+appServer.use(expressServer.static('public'));
 appServer.use(expressServer.urlencoded({ extended: true }));
-appServer.use('/uploads', expressServer.static(process.cwd() + '/uploads'))
+ appServer.use('./uploads', expressServer.static(process.cwd() + './uploads'));
+
 const swaggerOptions = {
     swaggerDefinition : {
         openapi: '3.1.0',
@@ -58,6 +60,9 @@ appServer.use('/api/oeuvres', oeuvresRoutes);
 
 const artistRoutes = require('./routes/artist.ts');
 appServer.use('/api/artist', artistRoutes);
+
+const mvcRoutes = require('./routes/mvc.ts');
+appServer.use('/api/mvc', mvcRoutes);
 
 const expoRoutes = require('./routes/expo.ts');
 appServer.use('/api/expo', expoRoutes);

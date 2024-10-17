@@ -122,7 +122,7 @@ router.post(
                     }else if(isFinishAt ==2) { 
                         filteredResult = result.filter((elem: Exposition) => new Date(elem.isFinishAt)<dateActuelle);
                     }else{
-                        res.status(500).send({"message":"Error in the id ."});
+                        return res.status(500).send({"message":"Error in the id ."});
                     }
                 })
                 res.status(200).send(filteredResult );
@@ -139,7 +139,7 @@ router.post(
 
 router.post(
     '/detail',
-    body('idExposition').isInt().escape(),
+    body('idExposition').isInt(),
     (req: Request, res: Response) => {
         try{
             // Validation des erreurs de la requête
@@ -168,7 +168,7 @@ router.post(
                     return res.status(500).send({ message: 'Erreur lors de l\'ajout de l\'exposition', error: err });
                 }
                 if(result.length==0){
-                    res.status(404).send({"message": "expsotion non connu"} );
+                    return res.status(404).send({"message": "expsotion non connu"} );
                 }
                 const expositions = result.map((elem: Exposition) => ({
                     idExposition: elem.idExposition,

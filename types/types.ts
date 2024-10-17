@@ -1,0 +1,3 @@
+interface Oeuvre {
+    idWorks :string ;
+}
