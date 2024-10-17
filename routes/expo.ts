@@ -14,6 +14,9 @@ interface Exposition {
     idPriceAdult: string;
     idPriceChild: string;
     idAdmin: number;
+    image:string;
+    adultPrice:number;
+    childPrice: number;
 }
 
 // Route pour ajouter une exposition
@@ -80,5 +83,115 @@ router.put(
     }
 );
 
+
+
+router.post(
+    '/listing',
+    body('isFinishAt').isInt().escape(),
+    (req: Request, res: Response) => {
+        try{
+            // Validation des erreurs de la requête
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(500).json({ errors: errors.array() });
+            }
+            const { isFinishAt } = req.body;
+            const sql =`
+    SELECT 
+        e.*, 
+        pAdult.price AS adultPrice, 
+        pChild.price AS childPrice 
+    FROM 
+        exposition e 
+    INNER JOIN 
+        price pAdult ON e.idPriceAdult = pAdult.idPrice 
+    INNER JOIN 
+        price pChild ON e.idPriceChild = pChild.idPrice
+`;
+            
+            
+            db.query(sql, [], (err: Error, result: any) => {
+                if (err) {
+                    return res.status(500).send({ message: 'Erreur lors de l\'ajout de l\'exposition', error: err });
+                }
+                const dateActuelle = new Date(); // Date actuelle
+                let filteredResult;
+                result.map((elem:Exposition)=>{
+                    if(isFinishAt ==1){
+                        filteredResult = result.filter((elem: Exposition) => new Date(elem.isFinishAt) > dateActuelle);
+                    }else if(isFinishAt ==2) { 
+                        filteredResult = result.filter((elem: Exposition) => new Date(elem.isFinishAt)<dateActuelle);
+                    }else{
+                        res.status(500).send({"message":"Error in the id ."});
+                    }
+                })
+                res.status(200).send(filteredResult );
+            });
+        }catch(error){
+            res.status(500).send({"message":error});
+            
+        }
+        //res.status(500).send({"message":"erreur dans id"});
+    }
+);
+
+
+
+router.post(
+    '/detail',
+    body('idExposition').isInt().escape(),
+    (req: Request, res: Response) => {
+        try{
+            // Validation des erreurs de la requête
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(500).json({ errors: errors.array() });
+            }
+            const { idExposition } = req.body;
+            const sql =`
+    SELECT 
+        e.*, 
+        pAdult.price AS adultPrice, 
+        pChild.price AS childPrice 
+    FROM 
+        exposition e 
+    INNER JOIN 
+        price pAdult ON e.idPriceAdult = pAdult.idPrice 
+    INNER JOIN 
+        price pChild ON e.idPriceChild = pChild.idPrice
+    WHERE e.idExposition = ?
+`;
+            
+            
+            db.query(sql, [idExposition], (err: Error, result: any) => {
+                if (err) {
+                    return res.status(500).send({ message: 'Erreur lors de l\'ajout de l\'exposition', error: err });
+                }
+                if(result.length==0){
+                    res.status(404).send({"message": "expsotion non connu"} );
+                }
+                const expositions = result.map((elem: Exposition) => ({
+                    idExposition: elem.idExposition,
+                    name: elem.name,
+                    isStartAt: elem.isStartAt,
+                    isFinishAt: elem.isFinishAt,
+                    description: elem.description,
+                    idPriceAdult: elem.idPriceAdult,
+                    idPriceChild: elem.idPriceChild,
+                    idAdmin: elem.idAdmin,
+                    image: elem.image,
+                    adultPrice: elem.adultPrice,
+                    childPrice: elem.childPrice,
+                }));
+                
+                res.status(200).send(expositions);
+            });
+        }catch(error){
+            res.status(500).send({"message":error});
+            
+        }
+        //res.status(500).send({"message":"erreur dans id"});
+    }
+);
 // Export du router
 module.exports = router;
