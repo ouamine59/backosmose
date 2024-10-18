@@ -1,6 +1,5 @@
 import {Request, Response } from 'express';
 
-const fs = require("fs");
 const { validationResult } = require('express-validator');
 const oeuvreModel = require("../models/oeuvreModel")
 

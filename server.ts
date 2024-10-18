@@ -60,14 +60,14 @@ appServer.use('/api/oeuvres', oeuvresRoutes);
 
 const artistRoutes = require('./routes/artist.ts');
 appServer.use('/api/artist', artistRoutes);
-
-const mvcRoutes = require('./routes/mvc.ts');
-appServer.use('/api/mvc', mvcRoutes);
-
 const expoRoutes = require('./routes/expo.ts');
 appServer.use('/api/expo', expoRoutes);
-
-
+/*** */
+const mvcRoutes = require('./routes/mvc.ts');
+appServer.use('/api/mvc', mvcRoutes);
+const usersMvcRoutes = require('./routes/usersMVC.ts');
+appServer.use('/api/usersmvc', usersMvcRoutes);
+/*** */
 const port = process.env.PORT || 5050;
 appServer.listen(port, () =>{
     console.log(`SERVER  DEMMARE: ${process.env.PORT}`)
