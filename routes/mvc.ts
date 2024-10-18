@@ -6,6 +6,6 @@ import { unlink } from 'node:fs';
 import path from 'path';
 import authenticateJWT from '../middleware/authenticateJWT';
 const { query,  check, body} = require('express-validator');
-routerOeuvres.post("/oeuvres",[authenticateJWT,body("idWorks").isInt()], mvc.postOeuvres)
+routerOeuvres.post("/oeuvres",[body("idWorks").isInt()], mvc.getOeuvreById)
 
 module.exports = routerOeuvres ;

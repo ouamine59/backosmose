@@ -1,3 +1,4 @@
-interface Oeuvre {
+export interface Oeuvre {
     idWorks :string ;
+    name:string;
 }
