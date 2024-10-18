@@ -15,7 +15,7 @@ interface CustomRequest extends Request {
 
 const storage = multer.diskStorage({
     destination: (req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
-        const path = `./uploads`
+        const path = `./public/uploads`
         fs.mkdirSync(path, { recursive: true })  
         return cb(null, path);
     },

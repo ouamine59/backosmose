@@ -165,13 +165,14 @@ router.get(
     '/listing', 
         (req: Request, res: Response) => {
  
-        const sql = 'SELECT *,a.name AS nameArtist,  c.name AS country FROM artist a INNER JOIN country c ON a.idCountry = c.idCountry ;';
+        const sql = 'SELECT *,a.image AS imageArtiste, a.name AS nameArtist,  c.name AS country FROM artist a INNER JOIN country c ON a.idCountry = c.idCountry ;';
         interface Artist  {
             idArtist: number; // Ajout d'un ID pour la clé unique
             nameArtist: string;
             birthDay: string;
             country: string;
             description:string;
+            image:string;
           }
         db.query(sql, (err: Error | null, result: any) => {
             if (err) {
@@ -184,7 +185,9 @@ router.get(
                     'nameArtist':result[i].nameArtist,
                     'birthDay': result[i].birthDay,
                     'country': result[i].country,
-                    'description' :result[i].description})
+                    'description' :result[i].description,
+                    'image':result[i].imageArtiste
+                })
             }
             return res.status(200).json(artistes);
         });

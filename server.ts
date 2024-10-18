@@ -9,13 +9,16 @@ const swaggerUi = require('swagger-ui-express')
 const cors = require('cors'); 
 const appServer = expressServer();
 
-appServer.use(cors());
+
 appServer.use(cors({
     origin:'http://localhost:3000'
 }));
 appServer.use(bodyParser.json())
 appServer.use(expressServer.urlencoded({ extended: true }));
-appServer.use('/uploads', expressServer.static(process.cwd() + '/uploads'))
+
+console.log('Serving static files from:', __dirname + '/public/uploads');
+appServer.use('/public/uploads', expressServer.static(__dirname + '/public/uploads'));
+
 const swaggerOptions = {
     swaggerDefinition : {
         openapi: '3.1.0',
