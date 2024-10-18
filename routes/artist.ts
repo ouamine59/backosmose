@@ -225,10 +225,9 @@ router.post(
             if (err) {
                 return res.status(500).send({ message: 'Erreur lors de la récupération des œuvres', error: err });
             }
-
             // Vérifier si une œuvre existe pour cet artiste
             if (re.length === 0) {
-                return res.status(404).send({ message: 'Aucune œuvre trouvée pour cet artiste.' });
+                return res.status(500).send({ message: 'Aucune œuvre trouvée pour cet artiste.' });
             }
 
             // Requête pour récupérer les images liées à l'œuvre
