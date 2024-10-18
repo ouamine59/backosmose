@@ -238,7 +238,49 @@ class Oeuvres{
             }
         })
     }          
-    
+    getWorkMonth =(sql:string,res:Response)=>{
+        interface Pictures{
+            idPictures:number;
+            pictures : string;
+            idWorks : number ;
+        }        
+        interface Oeuvres {
+            idWorks :number;
+            name:string;
+            isCreatedAt: string;
+            idArtist:number;
+            description:string;
+            pictures :Pictures[] ;
+            artiste :string;
+        }
+        let oeuvres :Oeuvres[]=[]
+        dbOeuvres.query(sql, [], async (err: Error | null, results : any)=>{
+            if(err){
+                return res.status(500).send({'message' : 'erreur', 'type': err});
+            }
+            //recuperation des imge
+            if (results.length > 0) {
+                await Promise.all(results.map(async (work: any) => {
+                    const sqlPictures = "SELECT * FROM pictures WHERE idWorks = ?";                 
+                    const [picturesResults] = await dbOeuvres.promise().query(sqlPictures, [work.idWorks]);   
+                    let pictures: Pictures[] = picturesResults.map((pic: any) => ({
+                        idPictures: pic.idPictures,
+                        pictures: pic.pictures,
+                        idWorks: pic.idWorks
+                    }));  
+                    oeuvres.push({
+                        idWorks: work.idWorks,
+                        name: work.nameoeuvre,
+                        isCreatedAt: work.isCreatedAt,
+                        idArtist: work.idArtist,
+                        artiste:work.nameartiste,
+                        description: work.description,
+                        pictures: pictures
+                    });
+                }));
+                return res.status(200).send(oeuvres);
+         }})
+    }
 }
 
 routerOeuvres.post('/admin/create',
@@ -352,4 +394,15 @@ routerOeuvres.put('/admin/shutdown',
             res.status(500).send({message : 'erreur', 'type': error});     
         }
     })
+
+
+routerOeuvres.get('/works-month',async(req: Request,res: Response)=>{
+    try{
+        const sql = "SELECT *, a.name AS nameartiste, w.name AS nameoeuvre FROM works w INNER JOIN artist a ON a.idArtist = w.idArtist WHERE workOfMonth =1 LIMIT 0,1";       
+        const oeuvre = new Oeuvres("", "",1,"description", []);
+        oeuvre.getWorkMonth(sql, res)
+    }catch(error){
+        res.status(500).send({message : 'erreur', 'type': error});     
+    }
+})
 module.exports = routerOeuvres ;
